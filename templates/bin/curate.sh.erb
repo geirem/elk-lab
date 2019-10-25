@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+. <%= @elk_config_dir %>/env.sh
+
+ELKS="jetty strapp generic"
+CWD=${ELK_BASE_DIR}/curate
+
+for elk in ${ELKS}; do
+   docker run -d -v ${CWD}/${elk}_config.yaml:/config.yaml -v ${CWD}/delete_${elk}_indices.yaml:/delete_indices.yaml --network ${ELK_NETWORK_NAME} docker.stb.intra/storebrand/curator:${ELK_IMAGE_VERSION} curator --config /config.yaml /delete_indices.yaml
+done

@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+
+. <%= @elk_config_dir %>/env.sh
+
+COMPOSITIONS="strapp infrastructure apps router cross nginx kibana"
+
+function establish_network {
+    docker network inspect ${ELK_NETWORK_NAME} >/dev/null 2>&1
+    if [[ $? -eq 0 ]]; then
+        return;
+    fi
+    docker network create --subnet 192.168.0.0/24 ${ELK_NETWORK_NAME}
+}
+
+function start_composition {
+   composition=$1
+   compose_file=compositions/docker-compose-${composition}.yaml
+   if [[ ! -f $compose_file ]]; then
+      echo "No such file ${compose_file}."
+      return
+   fi
+   docker-compose -f ${compose_file} up -d;
+   sleep 5;
+}
+
+function start {
+    establish_network
+    if [[ -n $1 ]]; then
+        start_composition $1;
+    else
+        for composition in ${COMPOSITIONS}; do
+            start_composition ${composition}
+        done
+    fi
+}
+
+function stop_composition {
+   composition=$1
+   compose_file=compositions/docker-compose-${composition}.yaml
+   if [[ ! -f $compose_file ]]; then
+      echo "No such file ${compose_file}."
+      return
+   fi
+   docker-compose -f ${compose_file} down;
+   LOCK_FILE=${ELK_DATA_DIR}/${composition}/nodes/0/node.lock
+   if [[ -f ${LOCK_FILE} ]]; then
+       echo Removing ${LOCK_FILE}
+       rm -f ${LOCK_FILE}
+   fi
+}
+
+function stop {
+    if [[ -n $1 ]]; then
+        stop_composition $1;
+    else
+        for composition in ${COMPOSITIONS}; do
+            stop_composition ${composition}
+        done
+    fi
+}
+
+ACTION=$1
+shift
+case ${ACTION} in
+    "start")
+        start $@
+      ;;
+    "stop")
+        stop $@
+      ;;
+    "restart")
+        stop $@
+        start $@
+      ;;
+    *)
+        echo "Unknown or no command: ${ACTION}"
+      ;;
+esac

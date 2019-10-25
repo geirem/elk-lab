@@ -1,0 +1,46 @@
+version: "3"
+
+services:
+
+  # Holds the cross together.
+  cross_elastic:
+    image: docker.stb.intra/storebrand/elastic:${ELK_IMAGE_VERSION}
+    environment:
+      - cluster.name=cross
+      - node.name=cross-node
+      - cluster.remote.infrastructure.seeds=${GENERIC_ELASTIC_IP}:9300
+      - cluster.remote.strapp.seeds=${STRAPP_ELASTIC_IP}:9300
+      - cluster.remote.apps.seeds=${JETTY_ELASTIC_IP}:9300
+      - cluster.routing.allocation.disk.watermark.low=20gb
+      - cluster.routing.allocation.disk.watermark.high=10gb
+      - cluster.routing.allocation.disk.watermark.flood_stage=5gb
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms16g -Xmx16g"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    networks:
+      elk_net:
+        ipv4_address: ${CROSS_ELASTIC_IP}
+        aliases:
+          - cross-node
+          - elasticsearch
+    volumes:
+      - ${ELK_DATA_DIR}/cross/:/usr/share/elasticsearch/data
+
+  # The shared kibana instance.  Publishes its interface, connects to cross Elastic instance.
+  cross_kibana:
+    image: docker.stb.intra/storebrand/kibana:${ELK_IMAGE_VERSION}
+    networks:
+      elk_net:
+        ipv4_address: ${CROSS_KIBANA_IP}
+    environment:
+      - SERVER_NAME=cross_kibana
+      - ELASTICSEARCH_URL=http://${CROSS_ELASTIC_IP}:9200
+      - NODE_OPTIONS=--max_old_space_size=8192
+
+networks:
+  elk_net:
+    external:
+      name: local_elk_net

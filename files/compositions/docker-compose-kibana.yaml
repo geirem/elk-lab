@@ -1,0 +1,19 @@
+version: "3"
+
+services:
+
+  # The shared kibana instance.  Publishes its interface, connects to cross Elastic instance.
+  cross_kibana:
+    image: docker.stb.intra/storebrand/kibana:${ELK_IMAGE_VERSION}
+    networks:
+      elk_net:
+        ipv4_address: ${CROSS_KIBANA_IP}
+    environment:
+      - SERVER_NAME=cross_kibana
+      - ELASTICSEARCH_URL=http://${CROSS_ELASTIC_IP}:9200
+      - NODE_OPTIONS=--max_old_space_size=8192
+
+networks:
+  elk_net:
+    external:
+      name: local_elk_net

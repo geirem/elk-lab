@@ -1,0 +1,22 @@
+version: "3"
+
+services:
+
+  proxy_nginx:
+    image: docker.stb.intra/storebrand/nginx-elk:${ELK_IMAGE_VERSION}
+    networks:
+      elk_net:
+        ipv4_address: ${PROXY_NGINX_IP}
+    ports:
+      - 9200:9200
+      - 443:443
+    volumes:
+      - ${ELK_CONFIG_DIR}/nginx_proxy/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ${ELK_KEY_DIR}/strapp/cert.pem:/keys/cert.pem:ro
+      - ${ELK_KEY_DIR}/strapp/key.pem:/keys/key.pem:ro
+      - ${ELK_KEY_DIR}/nginx/.htpasswd:/keys/.htpasswd:ro
+
+networks:
+  elk_net:
+    external:
+      name: local_elk_net

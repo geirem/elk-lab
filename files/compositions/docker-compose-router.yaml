@@ -1,0 +1,26 @@
+version: "3"
+
+services:
+
+  router_logstash:
+    image: docker.stb.intra/storebrand/logstash:${ELK_IMAGE_VERSION}
+    environment:
+      - JETTY_LOGSTASH_LOCATION=http://${JETTY_ELASTIC_IP}:9200
+      - GENERIC_LOGSTASH_LOCATION=http://${GENERIC_ELASTIC_IP}:9200
+    networks:
+      elk_net:
+        ipv4_address: ${ROUTER_LOGSTASH_IP}
+    ports:
+      - 5044:5044
+    volumes:
+      - ${ELK_KEY_DIR}/ca/ca_cert.pem:/keys/ca_cert.pem
+      - ${ELK_KEY_DIR}/ca/stb_ca_cert.pem:/keys/stb_ca_cert.pem
+      - ${ELK_KEY_DIR}/logstash/cert.pem:/keys/cert.pem
+      - ${ELK_KEY_DIR}/logstash/key.pem:/keys/key.pem
+      - ${ELK_CONFIG_DIR}/logstash_router/pipeline.yml:/usr/share/logstash/pipeline/logstash.conf
+      - ${ELK_CONFIG_DIR}/logstash_router/storebrand_template.json:/etc/elk/config/logstash_router/storebrand_template.json
+
+networks:
+  elk_net:
+    external:
+      name: local_elk_net

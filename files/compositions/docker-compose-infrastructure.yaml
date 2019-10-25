@@ -1,0 +1,33 @@
+version: "3"
+
+services:
+
+  # Store infrastructure log data, ingested from logstash.
+  generic_elastic:
+    image: docker.stb.intra/storebrand/elastic:${ELK_IMAGE_VERSION}
+    environment:
+      - cluster.name=infrastructure
+      - node.name=generic-node
+      - transport.host=${GENERIC_ELASTIC_IP}
+      - transport.tcp.port=9300
+      - cluster.routing.allocation.disk.watermark.low=20gb
+      - cluster.routing.allocation.disk.watermark.high=10gb
+      - cluster.routing.allocation.disk.watermark.flood_stage=5gb
+      - cluster.initial_master_nodes=generic-node
+      - "ES_JAVA_OPTS=-Xms24g -Xmx24g"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    networks:
+      elk_net:
+        ipv4_address: ${GENERIC_ELASTIC_IP}
+        aliases:
+          - generic-node
+    volumes:
+      - ${ELK_DATA_DIR}/generic/:/usr/share/elasticsearch/data
+
+networks:
+  elk_net:
+    external:
+      name: local_elk_net
