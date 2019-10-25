@@ -1,0 +1,75 @@
+version: "3"
+
+services:
+
+  jetty_elastic:
+    image: docker.elastic.co/elasticsearch/elasticsearch-oss:7.2.0
+    environment:
+      - cluster.name=apps
+      - node.name=jetty-node
+      - transport.host=${JETTY_ELASTIC_IP}
+      - transport.tcp.port=9300
+#      - cluster.routing.allocation.disk.watermark.low=20gb
+#      - cluster.routing.allocation.disk.watermark.high=10gb
+#      - cluster.routing.allocation.disk.watermark.flood_stage=5gb
+      - cluster.initial_master_nodes=jetty-node
+#      - "ES_JAVA_OPTS=-Xms24g -Xmx24g"
+    ports:
+      - 9200:9200
+      - 9300:9300
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    networks:
+      elk_net:
+        ipv4_address: ${JETTY_ELASTIC_IP}
+        aliases:
+          - jetty-node
+    volumes:
+      - ${ELK_DATA_DIR}/jetty/:/usr/share/elasticsearch/data
+
+  cross_kibana:
+    image: docker.elastic.co/kibana/kibana-oss:7.2.0
+    ports:
+      - 5601:5601
+    networks:
+      elk_net:
+        ipv4_address: ${CROSS_KIBANA_IP}
+    environment:
+      - SERVER_NAME=cross_kibana
+      - ELASTICSEARCH_URL=http://${JETTY_ELASTIC_IP}:9200
+#      - NODE_OPTIONS=--max_old_space_size=8192
+
+  router_logstash:
+    image: docker.elastic.co/logstash/logstash-oss:7.2.0
+    environment:
+      - JETTY_LOGSTASH_LOCATION=http://${JETTY_ELASTIC_IP}:9200
+    networks:
+      elk_net:
+        ipv4_address: ${ROUTER_LOGSTASH_IP}
+    ports:
+      - 5044:5044
+    volumes:
+#      - ${ELK_KEY_DIR}/ca/ca_cert.pem:/keys/ca_cert.pem
+#      - ${ELK_KEY_DIR}/ca/stb_ca_cert.pem:/keys/stb_ca_cert.pem
+#      - ${ELK_KEY_DIR}/logstash/cert.pem:/keys/cert.pem
+#      - ${ELK_KEY_DIR}/logstash/key.pem:/keys/key.pem
+      - ./logstash/pipeline.yml:/usr/share/logstash/pipeline/logstash.conf
+      - ./logstash/storebrand_template.json:/etc/elk/config/logstash_router/storebrand_template.json
+
+  filebeat_listener:
+    image: docker.elastic.co/beats/filebeat:7.2.0
+    networks:
+      elk_net:
+        ipv4_address: ${FILEBEAT_IP}
+    volumes:
+      - ./filebeat/filebeat.yml:/etc/filebeat/filebeat.yml
+      - ./logs/:/var/lib/jetty/client-t/myapp/
+
+networks:
+  elk_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.0.0/24

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-declare -x ELK_IMAGE_VERSION=<%= @elk_image_version %>
+declare -x ELK_IMAGE_VERSION=7.2.0
 
 declare -x ELK_BASE_DIR=/var/lib/elasticsearch
 declare -x ELK_DATA_DIR=/var/lib/elasticsearch/data;
@@ -15,6 +15,7 @@ declare -x JETTY_ELASTIC_IP=192.168.0.13
 declare -x ROUTER_LOGSTASH_IP=192.168.0.100
 declare -x CROSS_KIBANA_IP=192.168.0.200
 declare -x PROXY_NGINX_IP=192.168.0.51
+declare -x FILEBEAT_IP=192.168.0.151
 
 declare -x COMPOSE_IGNORE_ORPHANS=True
 declare -x ELK_NETWORK_NAME=local_elk_net

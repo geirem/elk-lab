@@ -1,0 +1,66 @@
+filebeat:
+
+  inputs:
+    - type: log
+      paths:
+        - /var/log/jetty/*/*/*.log
+      document_type: jetty
+      close_inactive: 30m
+      close_timeout: 5m
+      ignore_older: 12h
+      multiline:
+        pattern: '^[[:space:]]'
+        negate: false
+        match: after
+      fields:
+        log_system: "jetty"
+      exclude_lines: ['HEAD /.*/OK HTTP/1.0" 200 ', "2Strapp-*"]
+    - type: log
+      paths:
+        - /var/log/jetty/*/*/*.json
+      document_type: jetty
+      close_inactive: 30m
+      close_timeout: 5m
+      ignore_older: 12h
+      json:
+        keys_under_root: true
+      fields:
+        log_system: "jetty"
+        log_format: "json"
+
+
+processors:
+  - dissect:
+      when:
+        equals:
+          fields.log_system: "jetty"
+      tokenizer: "/var/log/jetty/%{category}-%{stage}/%{program}/%{logfile}"
+      field: "log.file.path"
+      target_prefix: ''
+#  - dissect:
+#      when:
+#        contains:
+#          log.file.path: "/auth/server.log"
+#      tokenizer: "${timestamp} (logref ${requestLogRef}.${sessionLogRef}) ${loglevel} [${class}] (${thread}) ${message}"
+#      field: "log.file.path"
+#      target_prefix: ''
+
+logging:
+  level: info
+  to_files: true
+  files:
+    path: /var/log/filebeat/
+    name: filebeat.log
+    keepfiles: 7
+    permissions: 0644
+
+
+output:
+  logstash:
+    hosts: [ "192.168.0.100:5044" ]
+#    ssl:
+#      certificate_authorities: ["/etc/filebeat/ssl/Storebrand_IT_CA.crt"]
+#      certificate: "/etc/filebeat/ssl/<%= @domain %>.crt"
+#      key: "/etc/filebeat/ssl/<%= @domain %>.pk8.key"
+#      verification_mode: full
+#      supported_protocols: TLSv1.2
