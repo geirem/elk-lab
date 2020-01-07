@@ -3,36 +3,21 @@ input {
     port => 5044
     client_inactivity_timeout => 0
     ssl => false
-#    ssl_certificate_authorities => ["/keys/stb_ca_cert.pem"]
-#    ssl_certificate => "/keys/cert.pem"
-#    ssl_key => "/keys/key.pem"
-#    ssl_verify_mode => "force_peer"
-#    tls_min_version => 1.2
-#    tls_max_version => 1.2
   }
 }
 
-filter {
-  if [fields][log_format] == "json" {
-    json {
-      source => "message"
-    }
-  }
-}
+#filter {
+#  if [fields][log_format] == "json" {
+#    json {
+#      source => "message"
+#    }
+#  }
+#}
 
 output {
-  if [fields][log_system] == "jetty" {
     elasticsearch {
-      template => "/etc/elk/config/logstash_router/storebrand_template.json"
-      hosts => "${JETTY_LOGSTASH_LOCATION}"
+      hosts => "192.168.0.10"
       index => "apps-%{+YYYY.MM.dd}"
     }
-  }
-  if [fields][log_system] != "jetty" {
-    elasticsearch {
-      template => "/etc/elk/config/logstash_router/storebrand_template.json"
-      hosts => "${JETTY_LOGSTASH_LOCATION}"
-      index => "infrastructure-%{+YYYY.MM.dd}"
-    }
-  }
 }
+#      template => "/etc/elk/config/logstash_router/storebrand_template.json"

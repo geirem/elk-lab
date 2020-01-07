@@ -12,8 +12,6 @@ filebeat:
         pattern: '^[[:space:]]'
         negate: false
         match: after
-      fields:
-        log_system: "jetty"
       exclude_lines: ['HEAD /.*/OK HTTP/1.0" 200 ', "2Strapp-*"]
     - type: log
       paths:
@@ -27,7 +25,6 @@ filebeat:
       fields:
         log_system: "jetty"
         log_format: "json"
-
 
 processors:
   - dissect:
@@ -46,21 +43,10 @@ processors:
 #      target_prefix: ''
 
 logging:
-  level: info
-  to_files: true
-  files:
-    path: /var/log/filebeat/
-    name: filebeat.log
-    keepfiles: 7
-    permissions: 0644
+  level: debug
+  to_files: false
 
 
 output:
   logstash:
-    hosts: [ "192.168.0.100:5044" ]
-#    ssl:
-#      certificate_authorities: ["/etc/filebeat/ssl/Storebrand_IT_CA.crt"]
-#      certificate: "/etc/filebeat/ssl/<%= @domain %>.crt"
-#      key: "/etc/filebeat/ssl/<%= @domain %>.pk8.key"
-#      verification_mode: full
-#      supported_protocols: TLSv1.2
+    hosts: [ "192.168.0.12:5044" ]
